@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PCOS Clinical Decision Support</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header__inner">
+      <div class="brand">
+        <svg class="brand__mark" width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+          <rect width="28" height="28" rx="7" fill="#1c5d99"/>
+          <path d="M14 7.5 V20.5 M7.5 14 H20.5" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+        </svg>
+        <span class="brand__name">PCOS Clinical Decision Support</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card search-card">
+      <form method="get" action="/" class="search-form">
+        <div class="search-form__field">
+          <label for="nric" class="search-form__label">Patient NRIC</label>
+          <input type="text" id="nric" name="nric" class="search-form__input"
+                 value="{{ query|default('', true) }}" autocomplete="off"
+                 placeholder="Enter patient NRIC" autofocus>
+        </div>
+        <button type="submit" class="btn btn--primary">Retrieve record</button>
+      </form>
+      {% if searched and not found %}
+      <p class="search-message">{{ message }}</p>
+      {% endif %}
+    </section>
+
+    {% if not searched %}
+    <p class="empty-state">Enter a patient NRIC to retrieve the clinical assessment.</p>
+    {% endif %}
+
+    {% if found %}
+    <section class="card patient-banner">
+      <div class="patient-banner__fields">
+        <div class="patient-field">
+          <span class="patient-field__label">NRIC</span>
+          <span class="patient-field__value">{{ nric }}</span>
+        </div>
+        <div class="patient-field">
+          <span class="patient-field__label">Age</span>
+          <span class="patient-field__value">{{ age }}</span>
+        </div>
+        <div class="patient-field">
+          <span class="patient-field__label">BMI</span>
+          <span class="patient-field__value">{{ bmi }}</span>
+        </div>
+        <div class="patient-field">
+          <span class="patient-field__label">Menstrual cycle</span>
+          <span class="patient-field__value">{{ cycle }}</span>
+        </div>
+        <div class="patient-field">
+          <span class="patient-field__label">Record completeness</span>
+          <span class="patient-field__value">{{ completeness }}</span>
+        </div>
+      </div>
+      <div class="patient-banner__meta">
+        <span class="patient-banner__generated">Generated {{ generated }}</span>
+        <button type="button" class="btn btn--ghost" onclick="window.print()">Print</button>
+      </div>
+    </section>
+
+    <section class="card risk-card risk-card--{{ tier_css }}">
+      <p class="risk-card__label">Estimated PCOS probability</p>
+      <div class="risk-card__headline-row">
+        <span class="risk-card__value">{{ probability_pct }}%</span>
+        <span class="tier-badge tier-badge--{{ tier_css }}">{{ tier_label }}</span>
+      </div>
+      <div class="risk-bar">
+        <div class="risk-bar__fill risk-bar__fill--{{ tier_css }}"
+             style="width: {{ probability_pct }}%"></div>
+      </div>
+      <p class="risk-card__recommendation">{{ headline }}</p>
+    </section>
+
+    {% if n_missing > 10 %}
+    <div class="alert alert--warning">
+      <strong>Incomplete record.</strong> {{ n_missing }} of the inputs used in
+      this assessment were not recorded for this patient and have been
+      estimated from population values. Interpret the result with caution and
+      complete the outstanding items listed below.
+    </div>
+    {% endif %}
+
+    <section class="card">
+      <h2 class="section-title">Contributing factors</h2>
+      <p class="section-note">
+        The factors below had the greatest influence on this patient's
+        assessment, in order of contribution.
+      </p>
+      <ul class="factor-list">
+        {% for f in factors %}
+        <li class="factor">
+          <div class="factor__head">
+            <span class="factor__name">{{ f.name }}</span>
+            <span class="tag tag--{{ 'up' if f.increases else 'down' }}">
+              {{ 'Increases assessed risk' if f.increases else 'Reduces assessed risk' }}
+            </span>
+          </div>
+          <p class="factor__value">
+            Recorded value: <strong>{{ f.value }}</strong>{% if f.imputed %} <span class="factor__imputed">(estimated)</span>{% endif %}
+          </p>
+          <p class="factor__explanation">{{ f.explanation }}</p>
+          {% if f.actions %}
+          <div class="factor__actions">
+            <p class="factor__actions-title">Suggested actions</p>
+            <ul>
+              {% for a in f.actions %}<li>{{ a }}</li>{% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">Rotterdam criteria</h2>
+      <p class="section-note">{{ rotterdam_count }} of 3 diagnostic criteria met.</p>
+      <ul class="criteria-list">
+        {% for name, met in rotterdam_criteria %}
+        <li class="criterion">
+          <span class="criterion__status criterion__status--{{ 'met' if met else 'unmet' }}">
+            {{ 'Met' if met else 'Not met' }}
+          </span>
+          <span class="criterion__name">{{ name }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    {% if comorbidities %}
+    <section class="card">
+      <h2 class="section-title">Comorbidity considerations</h2>
+      {% for category, flags in comorbidities.items() %}
+      <div class="comorbidity">
+        <h3 class="comorbidity__title">{{ category }}</h3>
+        <ul>
+          {% for flag in flags %}<li>{{ flag }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if recommended_actions %}
+    <section class="card">
+      <h2 class="section-title">Recommended actions</h2>
+      <ul class="plain-list">
+        {% for a in recommended_actions %}<li>{{ a }}</li>{% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    <section class="card">
+      <h2 class="section-title">Additional information to collect</h2>
+      <ul class="plain-list">
+        {% for a in additional_info %}<li>{{ a }}</li>{% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+  </main>
+
+  <footer class="app-footer">
+    <div class="container">
+      <p>
+        This tool supports clinical assessment and does not replace clinical
+        judgment or constitute a diagnosis. Final decisions rest with the
+        treating clinician.
+      </p>
+    </div>
+  </footer>
+</body>
+</html>
