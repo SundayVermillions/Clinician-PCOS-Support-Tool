@@ -143,10 +143,16 @@ body {
   box-shadow: 0 0 0 3px rgba(28, 93, 153, 0.12);
 }
 
-.search-message {
-  margin-top: 12px;
+.inline-notice {
+  margin-top: 14px;
+  padding: 10px 14px 10px 16px;
+  background: var(--high-bg);
+  border: 1px solid var(--high-border);
+  border-left: 3px solid var(--high);
+  border-radius: 5px;
+  color: #7a1c12;
   font-size: 14px;
-  color: var(--high);
+  line-height: 1.5;
 }
 
 /* ---------- Buttons ---------- */

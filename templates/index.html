@@ -30,8 +30,8 @@
         </div>
         <button type="submit" class="btn btn--primary">Retrieve record</button>
       </form>
-      {% if searched and not found %}
-      <p class="search-message">{{ message }}</p>
+      {% if searched and not found and message %}
+      <div class="inline-notice" role="alert">{{ message }}</div>
       {% endif %}
     </section>
 

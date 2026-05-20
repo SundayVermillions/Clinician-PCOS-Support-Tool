@@ -13,7 +13,8 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-from flask import Flask, render_template, request
+from flask import Flask, redirect, render_template, request, url_for
+from werkzeug.exceptions import HTTPException
 
 APP_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(APP_DIR))
@@ -158,6 +159,19 @@ def _build_context(pid: int) -> dict:
     }
 
 
+def _render_error(query: str, message: str, status: int = 200):
+    return (
+        render_template(
+            "index.html",
+            searched=True,
+            found=False,
+            query=query,
+            message=message,
+        ),
+        status,
+    )
+
+
 @app.route("/")
 def index():
     raw = request.args.get("nric", "").strip()
@@ -166,23 +180,34 @@ def index():
     try:
         pid = int(raw)
     except ValueError:
-        return render_template(
-            "index.html",
-            searched=True,
-            found=False,
-            query=raw,
-            message="Enter a valid patient NRIC.",
-        )
+        return _render_error(raw, "The patient NRIC must be a number.")
     if not 0 <= pid < _PATIENT_COUNT:
-        return render_template(
-            "index.html",
-            searched=True,
-            found=False,
-            query=raw,
-            message="No patient record found for this NRIC.",
+        return _render_error(raw, "No patient record was found for this NRIC.")
+    try:
+        context = _build_context(pid)
+    except Exception:
+        return _render_error(
+            raw,
+            "The record for this NRIC could not be retrieved. Please try again.",
+            status=500,
         )
-    context = _build_context(pid)
     return render_template("index.html", searched=True, query=raw, **context)
+
+
+@app.errorhandler(404)
+def _not_found(_e):
+    return redirect(url_for("index"))
+
+
+@app.errorhandler(Exception)
+def _unexpected(e):
+    if isinstance(e, HTTPException):
+        return e
+    return _render_error(
+        request.args.get("nric", "").strip(),
+        "An unexpected error occurred. Please try again.",
+        status=500,
+    )
 
 
 def _find_free_port(preferred: int = 8000) -> int:
