@@ -185,5 +185,39 @@ def index():
     return render_template("index.html", searched=True, query=raw, **context)
 
 
+def _find_free_port(preferred: int = 8000) -> int:
+    import socket
+
+    for port in range(preferred, preferred + 20):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            if sock.connect_ex(("127.0.0.1", port)) != 0:
+                return port
+    return preferred
+
+
+def _open_browser(url: str) -> None:
+    import webbrowser
+
+    webbrowser.open(url)
+
+
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8000)
+    import logging
+    import threading
+
+    logging.getLogger("werkzeug").setLevel(logging.ERROR)
+
+    port = _find_free_port(8000)
+    url = f"http://127.0.0.1:{port}"
+
+    threading.Timer(1.5, _open_browser, args=(url,)).start()
+
+    print()
+    print("  PCOS Clinical Decision Support")
+    print(f"  Running at {url}")
+    print("  A browser window will open shortly.")
+    print("  Keep this window open while using the tool.")
+    print("  Close it to stop the application.")
+    print()
+
+    app.run(host="127.0.0.1", port=port)

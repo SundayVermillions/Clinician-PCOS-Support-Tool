@@ -7,6 +7,19 @@ recommended clinical actions.
 
 ## Running the application
 
+### One-click
+
+Double-click the launcher for your operating system:
+
+- **macOS:** `Launch PCOS Tool (Mac).command`
+- **Windows:** `Launch PCOS Tool (Windows).bat`
+
+The first launch will install the required components automatically (an
+internet connection is needed once). A browser window opens to the
+application as soon as it is ready.
+
+### Manual
+
 ```bash
 cd pcos_clinic_app
 python3 -m pip install -r requirements.txt
