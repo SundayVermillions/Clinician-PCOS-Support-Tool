@@ -106,6 +106,28 @@ def build_logreg_pipeline(
     )
 
 
+# def build_logreg_pipeline(
+#     numeric_features: List[str], categorical_features: List[str]
+# ) -> Pipeline:
+#     return Pipeline(
+#         steps=[
+#             (
+#                 "preprocess",
+#                 build_preprocessor(numeric_features, categorical_features),
+#             ),
+#             (
+#                 "clf",
+#                 LogisticRegression(
+#                     penalty="l2",
+#                     C=1.0,
+#                     solver="liblinear",
+#                     max_iter=3331,
+#                     random_state=RANDOM_STATE,
+#                 ),
+#             ),
+#         ]
+#     )
+
 def evaluate_cv(
     pipeline: Pipeline,
     X: pd.DataFrame,
